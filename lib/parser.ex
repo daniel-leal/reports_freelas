@@ -5,7 +5,7 @@ defmodule ReportsFreelas.Parser do
     |> Stream.map(fn line -> parse_line(line) end)
   end
 
-  def parse_line(line) do
+  defp parse_line(line) do
     line
     |> String.trim()
     |> String.split(",")
@@ -15,7 +15,7 @@ defmodule ReportsFreelas.Parser do
     |> List.update_at(3, &parse_month/1)
   end
 
-  def parse_month(month_number) do
+  defp parse_month(month_number) do
     case month_number do
       "1" -> :janeiro
       "2" -> :fevereiro

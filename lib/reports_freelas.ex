@@ -37,11 +37,11 @@ defmodule ReportsFreelas do
     |> Enum.reduce(report_acc(), fn line, report -> total(line, report) end)
   end
 
-  def total(line, %{
-        all_hours: all_hours,
-        hours_per_month: hours_per_month,
-        hours_per_year: hours_per_year
-      }) do
+  defp total(line, %{
+         all_hours: all_hours,
+         hours_per_month: hours_per_month,
+         hours_per_year: hours_per_year
+       }) do
     all_hours = sum_all_hours(line, all_hours)
     hours_per_month = sum_hours_per_month(line, hours_per_month)
     hours_per_year = sum_hours_per_year(line, hours_per_year)
@@ -49,11 +49,11 @@ defmodule ReportsFreelas do
     build_report(all_hours, hours_per_month, hours_per_year)
   end
 
-  def sum_all_hours([name, hour, _, _, _], all_hours) do
+  defp sum_all_hours([name, hour, _, _, _], all_hours) do
     Map.put(all_hours, name, all_hours[name] + hour)
   end
 
-  def sum_hours_per_month([name, hour, _, month, _], hours_per_month) do
+  defp sum_hours_per_month([name, hour, _, month, _], hours_per_month) do
     Map.put(
       hours_per_month,
       name,
@@ -61,7 +61,7 @@ defmodule ReportsFreelas do
     )
   end
 
-  def sum_hours_per_year([name, hour, _, _, year], hours_per_year) do
+  defp sum_hours_per_year([name, hour, _, _, year], hours_per_year) do
     Map.put(
       hours_per_year,
       name,
@@ -69,7 +69,7 @@ defmodule ReportsFreelas do
     )
   end
 
-  def report_acc do
+  defp report_acc do
     all_hours = Enum.into(@freelas, %{}, &{&1, 0})
 
     months = Enum.into(@available_months, %{}, &{&1, 0})
@@ -81,7 +81,11 @@ defmodule ReportsFreelas do
     build_report(all_hours, hours_per_month, hours_per_year)
   end
 
-  def build_report(all_hours, hours_per_month, hours_per_year) do
-    %{all_hours: all_hours, hours_per_month: hours_per_month, hours_per_year: hours_per_year}
+  defp build_report(all_hours, hours_per_month, hours_per_year) do
+    %{
+      all_hours: all_hours,
+      hours_per_month: hours_per_month,
+      hours_per_year: hours_per_year
+    }
   end
 end
