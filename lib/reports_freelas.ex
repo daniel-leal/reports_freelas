@@ -2,34 +2,34 @@ defmodule ReportsFreelas do
   alias ReportsFreelas.Parser
 
   @freelas [
-    :cleiton,
-    :daniele,
-    :danilo,
-    :diego,
-    :giuliano,
-    :jakeliny,
-    :joseph,
-    :mayk,
-    :rafael,
-    :vinicius
+    "cleiton",
+    "daniele",
+    "danilo",
+    "diego",
+    "giuliano",
+    "jakeliny",
+    "joseph",
+    "mayk",
+    "rafael",
+    "vinicius"
   ]
 
   @available_months [
-    :janeiro,
-    :fevereiro,
-    :março,
-    :abril,
-    :maio,
-    :junho,
-    :julho,
-    :agosto,
-    :setembro,
-    :outubro,
-    :novembro,
-    :dezembro
+    "janeiro",
+    "fevereiro",
+    "março",
+    "abril",
+    "maio",
+    "junho",
+    "julho",
+    "agosto",
+    "setembro",
+    "outubro",
+    "novembro",
+    "dezembro"
   ]
 
-  @available_years ["2016", "2017", "2018", "2019", "2020"]
+  def build(), do: {:error, "Insira o nome do arquivo"}
 
   def build(filename) do
     filename
@@ -37,14 +37,44 @@ defmodule ReportsFreelas do
     |> Enum.reduce(report_acc(), fn line, report -> total(line, report) end)
   end
 
-  defp total(line, %{
-         all_hours: all_hours,
-         hours_per_month: hours_per_month,
-         hours_per_year: hours_per_year
-       }) do
+  def build_from_many(), do: {:error, "Insira os nomes dos arquivos"}
+
+  def build_from_many(filenames) do
+    filenames
+    |> Task.async_stream(&build/1)
+    |> Enum.reduce(report_acc(), fn {:ok, result}, report -> sum_reports(report, result) end)
+  end
+
+  defp total(line, report) do
+    %{
+      "all_hours" => all_hours,
+      "hours_per_month" => hours_per_month,
+      "hours_per_year" => hours_per_year
+    } = report
+
     all_hours = sum_all_hours(line, all_hours)
     hours_per_month = sum_hours_per_month(line, hours_per_month)
     hours_per_year = sum_hours_per_year(line, hours_per_year)
+
+    build_report(all_hours, hours_per_month, hours_per_year)
+  end
+
+  defp sum_reports(report, result) do
+    %{
+      "all_hours" => all_hours1,
+      "hours_per_month" => hours_per_month1,
+      "hours_per_year" => hours_per_year1
+    } = report
+
+    %{
+      "all_hours" => all_hours2,
+      "hours_per_month" => hours_per_month2,
+      "hours_per_year" => hours_per_year2
+    } = result
+
+    all_hours = merge_maps(all_hours1, all_hours2)
+    hours_per_month = merge_nested_maps(hours_per_month1, hours_per_month2)
+    hours_per_year = merge_nested_maps(hours_per_year1, hours_per_year2)
 
     build_report(all_hours, hours_per_month, hours_per_year)
   end
@@ -69,13 +99,25 @@ defmodule ReportsFreelas do
     )
   end
 
+  def sum_map_values(map, %{key: key, value: value}) do
+    Map.put(map, key, map[key] + value)
+  end
+
+  defp merge_maps(map1, map2) do
+    Map.merge(map1, map2, fn _key, value1, value2 -> value1 + value2 end)
+  end
+
+  defp merge_nested_maps(map1, map2) do
+    Map.merge(map1, map2, fn _key, value1, value2 -> merge_maps(value1, value2) end)
+  end
+
   defp report_acc do
     all_hours = Enum.into(@freelas, %{}, &{&1, 0})
 
     months = Enum.into(@available_months, %{}, &{&1, 0})
     hours_per_month = Enum.into(@freelas, %{}, &{&1, months})
 
-    years = Enum.into(@available_years, %{}, &{&1, 0})
+    years = Enum.into(2016..2020, %{}, &{&1, 0})
     hours_per_year = Enum.into(@freelas, %{}, &{&1, years})
 
     build_report(all_hours, hours_per_month, hours_per_year)
@@ -83,9 +125,9 @@ defmodule ReportsFreelas do
 
   defp build_report(all_hours, hours_per_month, hours_per_year) do
     %{
-      all_hours: all_hours,
-      hours_per_month: hours_per_month,
-      hours_per_year: hours_per_year
+      "all_hours" => all_hours,
+      "hours_per_month" => hours_per_month,
+      "hours_per_year" => hours_per_year
     }
   end
 end
